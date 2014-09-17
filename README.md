@@ -30,6 +30,7 @@ require.config({
         fingerprint: 'lib/require/fingerprint',
     }
 });
+```
 
 
 ## Writing your own plugins
