@@ -47,4 +47,4 @@ Also be sure to check [RequireJS Wiki](https://github.com/jrburke/requirejs/wiki
 
 ## License
 
-All the plugins are released under the MIT license.
+This plugin is released under the MIT license.
