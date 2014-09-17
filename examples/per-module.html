@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>RequireJS Async plugin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      .info{background-color:#cfc; border:2px solid #ada; padding:10px 20px;  margin:2em 0}
+    </style>
+  </head>
+  <body>
+    <div id="wrapper">
+      <h1>RequireJS fingerprint plugin</h1>
+      <div class="info">
+        <p>Adds a fingerprint to resources loaded with RequireJS. This works for JSON, CSS and javascript files.</p>
+      </div>
+    </div>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/require.js/2.1.14/require.min.js"></script>
+    <script>
+      require({
+        paths : {
+          fingerprint : '../src/fingerprint'
+        },
+        fingerprint: {
+          'js/foo': 'foo123',
+          'default': 'default123',
+        }
+      });
+
+      require(['fingerprint!js/foo','fingerprint!js/bar'], function(foo, bar) {
+        console.log('foo message: ' + foo.message);
+        console.log('bar message: ' + bar.message);
+      });
+
+    </script>
+  </body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "requirejs-fingerprint",
+  "version": "1.0.0",
+  "main": "src/fingerprint.js",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "components",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "authors": [
+    "Meinaart van Straalen <github@kayenta.nl>"
+  ],
+  "description": "Plugin for RequireJS for fingerprinting loaded modules.",
+  "keywords": [
+    "requirejs",
+    "require",
+    "amd",
+    "fingerprint",
+    "plugin"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/meinaart/requirejs-fingerprint"
+}
