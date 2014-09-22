@@ -51,76 +51,80 @@ define({
       onload(null);
     } else {
       var loadName = name;
-      var fingerprint = config.fingerprint;
 
-      var APPEND = 'append';
-      var BEFORE_EXTENSION = 'beforeExtension';
+      if(!req.specified(loadName)) {
+        var fingerprint = config.fingerprint;
 
-      var options = {
-        mode: APPEND,
-        suffix: '',
-        prefix: '?'
-      };
+        var APPEND = 'append';
+        var BEFORE_EXTENSION = 'beforeExtension';
 
-      // Fingerprint can be a string (global fingerprint)
-      // or an object with module names and specific fingerprint per module.
-      // If it can't find a specific fingerprint it will use the default one (if specified).
-      if(typeof fingerprint === 'object') {
-        var fingerprints = fingerprint;
+        var options = {
+          mode: APPEND,
+          suffix: '',
+          prefix: '?'
+        };
 
-        if(fingerprint.options !== undefined) {
-          options = extend(options, fingerprint.options);
+        // Fingerprint can be a string (global fingerprint)
+        // or an object with module names and specific fingerprint per module.
+        // If it can't find a specific fingerprint it will use the default one (if specified).
+        if(typeof fingerprint === 'object') {
+          var fingerprints = fingerprint;
 
-          // Retrieve fingerprints from fingerprint property
-          fingerprints = fingerprint.fingerprints;
+          if(fingerprint.options !== undefined) {
+            options = extend(options, fingerprint.options);
+
+            // Retrieve fingerprints from fingerprint property
+            fingerprints = fingerprint.fingerprints;
+          }
+
+          fingerprint = fingerprints[name] !== undefined ? fingerprints[name] : fingerprints['default'];
         }
 
-        fingerprint = fingerprints[name] !== undefined ? fingerprints[name] : fingerprints['default'];
-      }
+        // Add suffix and prefix (if set)
+        if(fingerprint && (options.suffix || options.prefix)) {
+          fingerprint = options.prefix + fingerprint + options.suffix;
+        }
 
-      // Add suffix and prefix (if set)
-      if(fingerprint && (options.suffix || options.prefix)) {
-        fingerprint = options.prefix + fingerprint + options.suffix;
-      }
+        // Apply fingerprint if it's configured and module is not already defined
+        if(fingerprint && !req.defined(name)) {
+          // Look up URL according to the requirejs config
+          var url = name.indexOf('!') === -1 ? req.toUrl(name) : name;
 
-      // Apply fingerprint if it's configured and module is not already defined
-      if(fingerprint && !req.defined(name)) {
-        // Look up URL according to the requirejs config
-        var url = name.indexOf('!') === -1 ? req.toUrl(name) : name;
-
-        if(url.match(/\.(js|css|json)$/gi)) {
-          // If URL contains a known extension insert fingerprint before extension
-          if(options.mode === BEFORE_EXTENSION) {
-            loadName = url.replace(/\.(css|js|json)$/gi, +fingerprint + '.$1');
+          if(url.match(/\.(js|css|json)$/gi)) {
+            // If URL contains a known extension insert fingerprint before extension
+            if(options.mode === BEFORE_EXTENSION) {
+              loadName = url.replace(/\.(css|js|json)$/gi, +fingerprint + '.$1');
+            } else {
+              loadName = url + fingerprint;
+            }
           } else {
-            loadName = url + fingerprint;
-          }
-        } else {
-          if(options.mode === BEFORE_EXTENSION) {
-            loadName = url + fingerprint;
-          } else {
-            loadName = url;
-          }
+            if(options.mode === BEFORE_EXTENSION) {
+              loadName = url + fingerprint;
+            } else {
+              loadName = url;
+            }
 
-          // Only add javascript extension if no other modules are defined (such as css!) 
-          if(url.indexOf('!') === -1) {
-            loadName += '.js';
-          }
+            // Only add javascript extension if no other modules are defined (such as css!) 
+            if(url.indexOf('!') === -1) {
+              loadName += '.js';
+            }
 
-          if(options.mode === APPEND) {
-            loadName += fingerprint;
+            if(options.mode === APPEND) {
+              loadName += fingerprint;
+            }
           }
+        }
+        
+        // Map fingerprinted name to original name
+        if(name !== loadName) {
+          config.map = config.map || {};
+          config.map['*'] = config.map['*'] || {};
+          config.map['*'][name] = loadName;
         }
       }
 
       // Load module (with or without fingerprint) and resolve it
       req([loadName], function(value) {
-        // Define loaded module under the name without fingerprint
-        if(name !== loadName) {
-          define(name, value);
-        }
-
-        // Resolve
         onload(value);
       });
     }
