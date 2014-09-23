@@ -1,6 +1,6 @@
 {
   "name": "requirejs-fingerprint",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "src/fingerprint.js",
   "ignore": [
     "**/.*",
@@ -13,7 +13,7 @@
   "authors": [
     "Meinaart van Straalen <github@kayenta.nl>"
   ],
-  "description": "Plugin for RequireJS for fingerprinting loaded modules.",
+  "description": "Plugin for RequireJS that adds a fingerprint when loading modules.",
   "keywords": [
     "requirejs",
     "require",
