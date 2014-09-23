@@ -1,5 +1,5 @@
-define(function(){
-    return {
-        message : 'foo loaded with custom fingerprint!'
-    };
+define(function() {
+  return {
+    message: 'foo loaded with custom fingerprint!'
+  };
 });

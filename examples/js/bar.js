@@ -1,5 +1,5 @@
-define(function(){
-    return {
-        message : 'bar loaded!'
-    };
+define(function() {
+  return {
+    message: 'bar loaded!'
+  };
 });

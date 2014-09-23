@@ -29,104 +29,120 @@
  *
  * @author Meinaart van Straalen
  */
-define({
-  load: function(name, req, onload, config) {
-    'use strict';
+define(['module'], function(module) {
+  'use strict';
 
-    /**
-     * Extend object with properties from second object
-     * @param  {object} result   Original object (is going to be modified)
-     * @param  {object} extender Object with additional properties
-     * @return {object}          Returns result object
-     */
-    var extend = function(result, extender) {
-      for(var key in extender) {
-        result[key] = extender[key];
-      }
-      return result;
-    };
+  var moduleConfig = (module.config && module.config());
+  var fingerprints;
 
-    if(config.isBuild) {
-      //avoid errors on the optimizer
-      onload(null);
-    } else {
-      var loadName = name;
+  if(!moduleConfig) {
+    throw new Error('Require.fingerprint need to be configured');
+  }
 
-      if(!req.specified(loadName)) {
-        var fingerprint = config.fingerprint;
+  var APPEND = 'append';
+  var BEFORE_EXTENSION = 'beforeExtension';
 
-        var APPEND = 'append';
-        var BEFORE_EXTENSION = 'beforeExtension';
+  var options = {
+    mode: APPEND,
+    suffix: '',
+    prefix: '?'
+  };
 
-        var options = {
-          mode: APPEND,
-          suffix: '',
-          prefix: '?'
-        };
+  /**
+   * Extend object with properties from second object
+   * @param  {object} result   Original object (is going to be modified)
+   * @param  {object} extender Object with additional properties
+   * @return {object}          Returns result object
+   */
+  function extend(result, extender) {
+    for (var key in extender) {
+      result[key] = extender[key];
+    }
+    return result;
+  }
 
-        // Fingerprint can be a string (global fingerprint)
-        // or an object with module names and specific fingerprint per module.
-        // If it can't find a specific fingerprint it will use the default one (if specified).
-        if(typeof fingerprint === 'object') {
-          var fingerprints = fingerprint;
+  // Fingerprint can be a string (global fingerprint)
+  // or an object with module names and specific fingerprint per module.
+  // If it can't find a specific fingerprint it will use the default one (if specified).
+  if (typeof moduleConfig === 'object') {
+    fingerprints = moduleConfig;
 
-          if(fingerprint.options !== undefined) {
-            options = extend(options, fingerprint.options);
+    if (moduleConfig.options !== undefined) {
+      options = extend(options, moduleConfig.options);
 
-            // Retrieve fingerprints from fingerprint property
-            fingerprints = fingerprint.fingerprints;
-          }
-
-          fingerprint = fingerprints[name] !== undefined ? fingerprints[name] : fingerprints['default'];
-        }
-
-        // Add suffix and prefix (if set)
-        if(fingerprint && (options.suffix || options.prefix)) {
-          fingerprint = options.prefix + fingerprint + options.suffix;
-        }
-
-        // Apply fingerprint if it's configured and module is not already defined
-        if(fingerprint && !req.defined(name)) {
-          // Look up URL according to the requirejs config
-          var url = name.indexOf('!') === -1 ? req.toUrl(name) : name;
-
-          if(url.match(/\.(js|css|json)$/gi)) {
-            // If URL contains a known extension insert fingerprint before extension
-            if(options.mode === BEFORE_EXTENSION) {
-              loadName = url.replace(/\.(css|js|json)$/gi, +fingerprint + '.$1');
-            } else {
-              loadName = url + fingerprint;
-            }
-          } else {
-            if(options.mode === BEFORE_EXTENSION) {
-              loadName = url + fingerprint;
-            } else {
-              loadName = url;
-            }
-
-            // Only add javascript extension if no other modules are defined (such as css!) 
-            if(url.indexOf('!') === -1) {
-              loadName += '.js';
-            }
-
-            if(options.mode === APPEND) {
-              loadName += fingerprint;
-            }
-          }
-        }
-        
-        // Map fingerprinted name to original name
-        if(name !== loadName) {
-          config.map = config.map || {};
-          config.map['*'] = config.map['*'] || {};
-          config.map['*'][name] = loadName;
-        }
-      }
-
-      // Load module (with or without fingerprint) and resolve it
-      req([loadName], function(value) {
-        onload(value);
-      });
+      // Retrieve fingerprints from fingerprint property
+      fingerprints = moduleConfig.fingerprints;
     }
   }
+
+  return {
+    load: function(name, req, onLoad, config) {
+      if (config.isBuild) {
+        //avoid errors on the optimizer
+        onLoad(null);
+      } else {
+        var loadName = name;
+
+        if(!req.specified(name)) {
+          var fingerprint = moduleConfig || config.config.fingerprint;
+
+          if (fingerprints) {
+            fingerprint = fingerprints[name] !== undefined ? fingerprints[name] : fingerprints['default'];
+          }
+
+          // Add suffix and prefix (if set)
+          if (fingerprint && (options.suffix || options.prefix)) {
+            fingerprint = options.prefix + fingerprint + options.suffix;
+          }
+
+          // Apply fingerprint if it's configured and module is not already defined
+          if (fingerprint && !req.defined(name)) {
+            // Look up URL according to the requirejs config
+            var url = name.indexOf('!') === -1 ? req.toUrl(name) : name;
+
+            if (url.match(/\.(js|css|json)$/gi)) {
+              // If URL contains a known extension insert fingerprint before extension
+              if (options.mode === BEFORE_EXTENSION) {
+                loadName = url.replace(/\.(css|js|json)$/gi, +fingerprint + '.$1');
+              } else {
+                loadName = url + fingerprint;
+              }
+            } else {
+              if (options.mode === BEFORE_EXTENSION) {
+                loadName = url + fingerprint;
+              } else {
+                loadName = url;
+              }
+
+              // Only add javascript extension if no other modules are defined (such as css!) 
+              if (url.indexOf('!') === -1 && options.mode === APPEND) {
+                loadName += '.js';
+              }
+
+              if (options.mode === APPEND) {
+                loadName += fingerprint;
+              }
+            }
+
+            // Map fingerprinted name to original name
+            if (name !== loadName) {
+              config.map = config.map || {};
+              config.map['*'] = config.map['*'] || {};
+
+              // Remove ./ from beginning of string, otherwise paths do not match
+              // withing RequireJS
+              config.map['*'][name] = loadName.replace(/^\.\//, '');
+            }
+          }
+        }
+
+        // Load module (with or without fingerprint) and resolve it
+        req([loadName], function(value) {
+          // Resolve
+          onLoad(value);
+        });
+      }
+    }
+  };
+
 });

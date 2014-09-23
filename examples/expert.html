@@ -15,20 +15,23 @@
         <p>Adds a fingerprint to resources loaded with RequireJS. This works for JSON, CSS and javascript files.</p>
       </div>
     </div>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/require.js/2.1.14/require.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/require.js/2.1.6/require.min.js"></script>
     <script>
       require({
         paths : {
           fingerprint : '../src/fingerprint'
         },
-        fingerprint: {
-          fingerprints: {
-            'js/foo': 'customfoo',
-            'js/bar': 'custombar'
-          },
-          options: {
-            prefix: '.',
-            mode: 'beforeExtension' // Can be "beforeExtension" or "append", default: append
+        waitSeconds: 2,
+        config: {
+          fingerprint: {
+            fingerprints: {
+              'js/foo': 'customfoo',
+              'js/bar': 'custombar'
+            },
+            options: {
+              prefix: '.',
+              mode: 'beforeExtension' // Can be "beforeExtension" or "append", default: append
+            }
           }
         }
       });
@@ -37,10 +40,9 @@
         console.log('foo message: ' + foo.message);
         console.log('bar message: ' + bar.message);
 
-        require(['js/foo'], function(requiredFoo) {
-          console.log('foo required message: ' + requiredFoo.message);
-          console.log('foo is available:', requiredFoo === foo);
-        });
+        var requiredFoo = require('js/foo');
+        console.log('foo required message: ' + requiredFoo.message);
+        console.log('js/foo is the same as fingerprint!js/foo:', requiredFoo === foo);
       });
 
     </script>

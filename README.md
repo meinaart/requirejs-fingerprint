@@ -28,7 +28,11 @@ require.config({
     paths : {
         //create alias to plugins (not needed if plugins are on the baseUrl)
         fingerprint: 'lib/require/fingerprint',
+    },
+    config: {
+      'fingerprint': 'build.1.2.3'
     }
+  }
 });
 ```
 
