@@ -32,9 +32,9 @@
  *
  * For full documentation and examples see:
  * https://github.com/meinaart/requirejs-fingerprint/
- * 
+ *
  * License: MIT
- * Version: 1.0.3
+ * Version: 1.0.4
  * @author Meinaart van Straalen - https://github.com/meinaart
  */
 define(['module'], function(module) {
@@ -54,6 +54,7 @@ define(['module'], function(module) {
 
   var APPEND = 'append';
   var BEFORE_EXTENSION = 'beforeExtension';
+  var REGEX = 'regex';
 
   var options = {
     mode: APPEND,
@@ -113,7 +114,7 @@ define(['module'], function(module) {
           }
 
           // Add suffix and prefix (if set)
-          if(fingerprint && (options.suffix || options.prefix)) {
+          if(fingerprint && (options.suffix || options.prefix) && options.mode !== REGEX) {
             fingerprint = options.prefix + fingerprint + options.suffix;
           }
 
@@ -122,38 +123,55 @@ define(['module'], function(module) {
             // Look up URL according to the requirejs config
             var url = name.indexOf('!') === -1 ? req.toUrl(name) : name;
 
-            if(url.match(extensionRegex)) {
-              // If URL contains a known extension insert fingerprint before extension
-              if(options.mode === BEFORE_EXTENSION) {
-                loadName = url.replace(extensionRegex, +fingerprint + '.$1');
+            if(url.indexOf(fingerprint) === -1) {
+              if(url.match(extensionRegex)) {
+                // If URL contains a known extension insert fingerprint before extension
+                if(options.mode === BEFORE_EXTENSION) {
+                  loadName = url.replace(extensionRegex, +fingerprint + '.$1');
+                } else if(options.mode === APPEND) {
+                  loadName = url + fingerprint;
+                }
               } else {
-                loadName = url + fingerprint;
-              }
-            } else {
-              if(options.mode === BEFORE_EXTENSION) {
-                loadName = url + fingerprint;
-              } else {
-                loadName = url;
+                if(options.mode === BEFORE_EXTENSION) {
+                  loadName = url + fingerprint;
+                } else {
+                  loadName = url;
+                }
+
+                // Only add javascript extension if no other modules are defined (such as css!) 
+                if(url.indexOf('!') === -1 && options.defaultExtension) {
+                  loadName += options.defaultExtension;
+                }
+
+                if(options.mode === APPEND) {
+                  loadName += fingerprint;
+                }
               }
 
-              // Only add javascript extension if no other modules are defined (such as css!) 
-              if(url.indexOf('!') === -1 && options.defaultExtension) {
-                loadName += options.defaultExtension;
-              }
+              if(options.mode === REGEX) {
+                if(typeof options.regex === 'object') {
+                  if(loadName.match(options.regex.match)) {
+                    var replacement = options.regex.replacement.replace(new RegExp('\\$fingerprint', 'g'), fingerprint);
+                    loadName = loadName.replace(options.regex.match, replacement);
+                  }
+                } else {
+                  throw new Error('Mode ' + REGEX + ' can only be used when a regex option is supplied.');
+                }
 
-              if(options.mode === APPEND) {
-                loadName += fingerprint;
               }
             }
 
             // Map fingerprinted name to original name
             if(name !== loadName) {
-              config.map = config.map || {};
-              config.map['*'] = config.map['*'] || {};
+              var aliasName = loadName.replace(/^\.\//, '');
+              if(aliasName !== loadName && name !== aliasName) {
+                config.map = config.map || {};
+                config.map['*'] = config.map['*'] || {};
 
-              // Remove ./ from beginning of string, otherwise paths do not match
-              // withing RequireJS
-              config.map['*'][name] = loadName.replace(/^\.\//, '');
+                // Remove ./ from beginning of string, otherwise paths do not match
+                // withing RequireJS
+                config.map['*'][name] = aliasName;
+              }
             }
           }
         }

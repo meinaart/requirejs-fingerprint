@@ -29,8 +29,11 @@
               'js/bar': 'custombar'
             },
             options: {
-              prefix: '.',
-              mode: 'beforeExtension' // Can be "beforeExtension", "regex" or "append", default: append
+              mode: 'regex',
+              regex: {
+                match: /(.*)/,
+                replacement: '$1?fp=$fingerprint'
+              }
             }
           }
         }
